@@ -1,0 +1,22 @@
+{
+  "name": "fan-control-test-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "check": "node --check src/index.js && node --check src/auth.js && node --check src/store.js && node --check src/routes.js && node --check src/validators.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+
