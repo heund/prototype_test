@@ -14,17 +14,27 @@ const nodeId = process.env.NODE_ID || "fan-node-01";
 const store = createStore({ nodeId });
 await store.ensureDataFiles();
 
+function requestOrigin(req) {
+  const protocol = req.get("x-forwarded-proto") || req.protocol;
+  return `${protocol}://${req.get("host")}`;
+}
+
 app.set("trust proxy", 1);
 app.use(helmet());
 app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin || origin === adminOrigin) {
-        callback(null, true);
-        return;
+  cors((req, callback) => {
+    callback(null, {
+      origin(origin, originCallback) {
+        const allowedOrigins = new Set([adminOrigin, requestOrigin(req)]);
+
+        if (!origin || allowedOrigins.has(origin)) {
+          originCallback(null, true);
+          return;
+        }
+
+        originCallback(new Error("CORS origin denied"));
       }
-      callback(new Error("CORS origin denied"));
-    }
+    });
   })
 );
 app.use(
@@ -63,4 +73,3 @@ app.use(async (err, req, res, _next) => {
 app.listen(port, () => {
   console.log(`fan-control-test listening on port ${port}`);
 });
-
