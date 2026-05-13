@@ -23,9 +23,9 @@ const adminHtml = String.raw`<!doctype html>
 
   <p>
     <button data-fan="0">STOP</button>
-    <button data-fan="64">LOW</button>
+    <button data-fan="51">LOW</button>
     <button data-fan="128">MEDIUM</button>
-    <button data-fan="255">HIGH</button>
+    <button data-fan="204">HIGH</button>
   </p>
 
   <h2>Status</h2>
