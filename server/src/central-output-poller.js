@@ -2,7 +2,7 @@ const VALID_PATTERNS = new Set(["idle", "soft_burst", "active_burst"]);
 
 const PWM_BY_PATTERN = {
   idle: 0,
-  soft_burst: 102,
+  soft_burst: 204,
   active_burst: 204
 };
 const FETCH_TIMEOUT_MS = 5000;
