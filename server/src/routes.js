@@ -190,6 +190,7 @@ export function createRoutes({ store, nodeId, adminToken, deviceToken, centralSe
 
     const currentState = await store.readState();
     const now = new Date().toISOString();
+    const clearSyncedStop = result.value.mode === "central" && currentState.centralStopStatus === "ok";
     const state = {
       ...currentState,
       nodeId,
@@ -199,9 +200,13 @@ export function createRoutes({ store, nodeId, adminToken, deviceToken, centralSe
       updatedAt: now,
       updatedBy: "admin",
       centralStopActive: result.value.mode === "central_stop"
+        ? true
+        : result.value.mode === "central"
+          ? !clearSyncedStop && Boolean(currentState.centralStopActive)
+          : Boolean(currentState.centralStopActive)
     };
 
-    if (result.value.mode === "manual" || result.value.mode === "central") {
+    if (result.value.mode === "manual") {
       state.centralStopActive = false;
     }
 

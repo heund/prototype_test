@@ -82,7 +82,7 @@ function mergeCentralDiagnostics(state, updates) {
   };
 }
 
-async function writeCentralState({ store, nodeId, centralStatus, centralOutput = null, pattern = "idle", intensity = 0, fans, mode, source = "central-server", expiresAt = null }) {
+async function writeCentralState({ store, nodeId, centralStatus, centralOutput = null, pattern = "idle", intensity = 0, fans, mode, source = "central-server", expiresAt = null, centralStopActive }) {
   const existing = await store.readState();
   const now = new Date().toISOString();
   const nextMode = mode || existing.mode || "central";
@@ -92,7 +92,8 @@ async function writeCentralState({ store, nodeId, centralStatus, centralOutput =
     centralStatus,
     pattern,
     intensity,
-    expiresAt
+    expiresAt,
+    ...(typeof centralStopActive === "boolean" ? { centralStopActive } : {})
   });
 
   nextState.nodeId = nodeId;
@@ -161,6 +162,24 @@ async function applyCentralOutput({ store, nodeId, output, staleMs }) {
   }
 
   if (existing.centralStopActive) {
+    const stopSynced = existing.centralStopStatus === "ok";
+    const freshCentralActivity = stopSynced && output.pattern !== "idle";
+
+    if (freshCentralActivity) {
+      return writeCentralState({
+        store,
+        nodeId,
+        mode: "central",
+        centralStatus: "ok",
+        centralOutput,
+        pattern: output.pattern,
+        intensity: output.intensity,
+        fans: { fan1: fanValue },
+        expiresAt,
+        centralStopActive: false
+      });
+    }
+
     return writeCentralState({
       store,
       nodeId,
