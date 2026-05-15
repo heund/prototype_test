@@ -21,6 +21,8 @@ function defaultState(nodeId) {
     centralOutput: null,
     centralStatus: "not_configured",
     centralStopActive: false,
+    centralStopStatus: null,
+    centralStopSyncedAt: null,
     pattern: "idle",
     intensity: 0,
     expiresAt: null,

@@ -137,10 +137,12 @@ async function notifyCentralFanStop({ centralServerUrl, centralControlToken }) {
       headers,
       signal: controller.signal
     });
+    const body = await response.json().catch(() => ({}));
 
     return {
       ok: response.ok,
-      status: response.ok ? "ok" : `http_${response.status}`
+      status: response.ok ? "ok" : `http_${response.status}`,
+      fanStoppedAt: body.fanStoppedAt || null
     };
   } catch {
     return { ok: false, status: "unreachable" };
@@ -219,6 +221,10 @@ export function createRoutes({ store, nodeId, adminToken, deviceToken, centralSe
         centralServerUrl,
         centralControlToken
       });
+      state.centralStopStatus = centralStopResult.status;
+      state.centralStopSyncedAt = now;
+      state.centralFanStoppedAt = centralStopResult.fanStoppedAt;
+      await store.writeState(state);
     }
 
     await store.appendLog({
