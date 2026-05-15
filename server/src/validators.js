@@ -32,16 +32,18 @@ export function validateCommandPayload(body) {
     return { ok: false, error: "request body must be an object" };
   }
 
-  if (!["manual", "central", "idle"].includes(body.mode)) {
-    return { ok: false, error: "mode must be manual, central, or idle" };
+  if (!["manual", "central", "central_stop", "idle"].includes(body.mode)) {
+    return { ok: false, error: "mode must be manual, central, central_stop, or idle" };
   }
 
-  if (body.mode === "central" || body.mode === "idle") {
+  if (body.mode === "central" || body.mode === "central_stop" || body.mode === "idle") {
     return {
       ok: true,
       value: {
         mode: body.mode,
-        fans: body.mode === "idle" ? FAN_KEYS.reduce((acc, key) => ({ ...acc, [key]: 0 }), {}) : null
+        fans: body.mode === "idle" || body.mode === "central_stop"
+          ? FAN_KEYS.reduce((acc, key) => ({ ...acc, [key]: 0 }), {})
+          : null
       }
     };
   }

@@ -75,6 +75,7 @@ function mergeCentralDiagnostics(state, updates) {
     ...state,
     centralOutput: Object.hasOwn(updates, "centralOutput") ? updates.centralOutput : state.centralOutput || null,
     centralStatus: updates.centralStatus || state.centralStatus || "not_configured",
+    centralStopActive: Object.hasOwn(updates, "centralStopActive") ? updates.centralStopActive : Boolean(state.centralStopActive),
     pattern: updates.pattern || state.pattern || "idle",
     intensity: typeof updates.intensity === "number" ? updates.intensity : state.intensity || 0,
     expiresAt: Object.hasOwn(updates, "expiresAt") ? updates.expiresAt : state.expiresAt || null
@@ -155,6 +156,21 @@ async function applyCentralOutput({ store, nodeId, output, staleMs }) {
       centralOutput,
       pattern: output.pattern,
       intensity: output.intensity,
+      expiresAt
+    });
+  }
+
+  if (existing.centralStopActive) {
+    return writeCentralState({
+      store,
+      nodeId,
+      mode: "central",
+      source: existing.source || "admin",
+      centralStatus: "ok",
+      centralOutput,
+      pattern: output.pattern,
+      intensity: output.intensity,
+      fans: { fan1: 0 },
       expiresAt
     });
   }

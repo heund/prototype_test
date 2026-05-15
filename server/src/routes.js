@@ -24,7 +24,7 @@ const adminHtml = String.raw`<!doctype html>
   <p>
     <button data-mode="central">CENTRAL</button>
     <button data-mode="idle">IDLE</button>
-    <button data-fan="0">STOP</button>
+    <button data-mode="central_stop">STOP</button>
     <button data-fan="51">LOW</button>
     <button data-fan="128">MEDIUM</button>
     <button data-fan="204">HIGH</button>
@@ -153,14 +153,19 @@ export function createRoutes({ store, nodeId, adminToken, deviceToken }) {
     const state = {
       ...currentState,
       nodeId,
-      mode: result.value.mode,
+      mode: result.value.mode === "central_stop" ? "central" : result.value.mode,
       source: "admin",
       fans: result.value.fans || currentState.fans,
       updatedAt: now,
-      updatedBy: "admin"
+      updatedBy: "admin",
+      centralStopActive: result.value.mode === "central_stop"
     };
 
-    if (result.value.mode === "idle") {
+    if (result.value.mode === "manual" || result.value.mode === "central") {
+      state.centralStopActive = false;
+    }
+
+    if (result.value.mode === "idle" || result.value.mode === "central_stop") {
       state.source = "admin";
       state.fans = result.value.fans;
       state.pattern = "idle";
