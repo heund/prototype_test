@@ -14,6 +14,7 @@ const nodeId = process.env.NODE_ID || "fan-node-01";
 const centralServerUrl = process.env.CENTRAL_SERVER_URL || "";
 const centralPollIntervalMs = process.env.CENTRAL_POLL_INTERVAL_MS || "2000";
 const centralOutputStaleMs = process.env.CENTRAL_OUTPUT_STALE_MS || "10000";
+const centralControlToken = process.env.CENTRAL_CONTROL_TOKEN || "";
 
 const store = createStore({ nodeId });
 await store.ensureDataFiles();
@@ -56,7 +57,9 @@ app.use(
     store,
     nodeId,
     adminToken: process.env.ADMIN_TOKEN,
-    deviceToken: process.env.DEVICE_TOKEN
+    deviceToken: process.env.DEVICE_TOKEN,
+    centralServerUrl,
+    centralControlToken
   })
 );
 

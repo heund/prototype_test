@@ -111,7 +111,45 @@ document.getElementById("token").addEventListener("change", refresh);
 setInterval(() => refresh().catch(() => {}), 5000);
 `;
 
-export function createRoutes({ store, nodeId, adminToken, deviceToken }) {
+const CENTRAL_STOP_TIMEOUT_MS = 5000;
+
+function normalizeBaseUrl(value) {
+  return String(value || "").trim().replace(/\/+$/, "");
+}
+
+async function notifyCentralFanStop({ centralServerUrl, centralControlToken }) {
+  const baseUrl = normalizeBaseUrl(centralServerUrl);
+  if (!baseUrl) {
+    return { ok: false, status: "not_configured" };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), CENTRAL_STOP_TIMEOUT_MS);
+  const headers = {};
+
+  if (centralControlToken) {
+    headers.Authorization = `Bearer ${centralControlToken}`;
+  }
+
+  try {
+    const response = await fetch(`${baseUrl}/api/control/fan-stop`, {
+      method: "POST",
+      headers,
+      signal: controller.signal
+    });
+
+    return {
+      ok: response.ok,
+      status: response.ok ? "ok" : `http_${response.status}`
+    };
+  } catch {
+    return { ok: false, status: "unreachable" };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export function createRoutes({ store, nodeId, adminToken, deviceToken, centralServerUrl, centralControlToken }) {
   const router = express.Router();
   const requireAdmin = requireBearerToken({
     expectedToken: adminToken,
@@ -174,13 +212,24 @@ export function createRoutes({ store, nodeId, adminToken, deviceToken }) {
     }
 
     await store.writeState(state);
+    let centralStopResult = null;
+
+    if (result.value.mode === "central_stop") {
+      centralStopResult = await notifyCentralFanStop({
+        centralServerUrl,
+        centralControlToken
+      });
+    }
+
     await store.appendLog({
       source: "admin",
       nodeId,
       event: "COMMAND_SET",
       data: {
         fans: state.fans,
-        mode: state.mode
+        mode: state.mode,
+        centralStopActive: state.centralStopActive,
+        centralStopStatus: centralStopResult ? centralStopResult.status : null
       }
     });
 
