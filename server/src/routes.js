@@ -190,7 +190,24 @@ export function createRoutes({ store, nodeId, adminToken, deviceToken, centralSe
 
     const currentState = await store.readState();
     const now = new Date().toISOString();
-    const clearSyncedStop = result.value.mode === "central" && currentState.centralStopStatus === "ok";
+    let centralStopResult = null;
+    const shouldRetryUnsyncedStop =
+      result.value.mode === "central" &&
+      currentState.centralStopActive &&
+      currentState.centralStopStatus !== "ok";
+
+    if (result.value.mode === "central_stop" || shouldRetryUnsyncedStop) {
+      centralStopResult = await notifyCentralFanStop({
+        centralServerUrl,
+        centralControlToken
+      });
+    }
+
+    const clearSyncedStop =
+      result.value.mode === "central" &&
+      currentState.centralStopActive &&
+      (currentState.centralStopStatus === "ok" || centralStopResult?.ok);
+
     const state = {
       ...currentState,
       nodeId,
@@ -219,16 +236,14 @@ export function createRoutes({ store, nodeId, adminToken, deviceToken, centralSe
     }
 
     await store.writeState(state);
-    let centralStopResult = null;
 
-    if (result.value.mode === "central_stop") {
-      centralStopResult = await notifyCentralFanStop({
-        centralServerUrl,
-        centralControlToken
-      });
+    if (centralStopResult) {
       state.centralStopStatus = centralStopResult.status;
       state.centralStopSyncedAt = now;
       state.centralFanStoppedAt = centralStopResult.fanStoppedAt;
+      if (centralStopResult.ok && result.value.mode === "central") {
+        state.centralStopActive = false;
+      }
       await store.writeState(state);
     }
 
