@@ -1,10 +1,5 @@
 import crypto from "node:crypto";
 
-function tokenPreview(token) {
-  if (!token) return "missing";
-  return `${token.slice(0, 4)}...${token.slice(-4)}`;
-}
-
 function timingSafeEqualString(a, b) {
   const left = Buffer.from(a || "", "utf8");
   const right = Buffer.from(b || "", "utf8");
@@ -35,8 +30,7 @@ export function requireBearerToken({ expectedToken, source, logEvent }) {
         nodeId: req.params.nodeId,
         event: "AUTH_FAILED",
         data: {
-          path: req.originalUrl,
-          token: tokenPreview(token)
+          path: req.originalUrl
         }
       });
 
@@ -46,4 +40,3 @@ export function requireBearerToken({ expectedToken, source, logEvent }) {
     return next();
   };
 }
-

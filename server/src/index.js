@@ -5,11 +5,15 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { createRoutes } from "./routes.js";
 import { createStore } from "./store.js";
+import { createCentralOutputPoller } from "./central-output-poller.js";
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
 const adminOrigin = process.env.ADMIN_ORIGIN || "http://localhost:3000";
 const nodeId = process.env.NODE_ID || "fan-node-01";
+const centralServerUrl = process.env.CENTRAL_SERVER_URL || "";
+const centralPollIntervalMs = process.env.CENTRAL_POLL_INTERVAL_MS || "2000";
+const centralOutputStaleMs = process.env.CENTRAL_OUTPUT_STALE_MS || "10000";
 
 const store = createStore({ nodeId });
 await store.ensureDataFiles();
@@ -55,6 +59,15 @@ app.use(
     deviceToken: process.env.DEVICE_TOKEN
   })
 );
+
+const centralOutputPoller = createCentralOutputPoller({
+  store,
+  nodeId,
+  centralServerUrl,
+  pollIntervalMs: centralPollIntervalMs,
+  staleMs: centralOutputStaleMs
+});
+await centralOutputPoller.start();
 
 app.use(async (err, req, res, _next) => {
   await store.appendLog({

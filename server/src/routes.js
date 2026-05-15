@@ -22,6 +22,8 @@ const adminHtml = String.raw`<!doctype html>
   </p>
 
   <p>
+    <button data-mode="central">CENTRAL</button>
+    <button data-mode="idle">IDLE</button>
     <button data-fan="0">STOP</button>
     <button data-fan="51">LOW</button>
     <button data-fan="128">MEDIUM</button>
@@ -77,6 +79,18 @@ async function sendFan(value) {
   }
 }
 
+async function sendMode(mode) {
+  try {
+    await request("/api/admin/command", {
+      method: "POST",
+      body: JSON.stringify({ mode })
+    });
+    await refresh();
+  } catch (err) {
+    document.getElementById("status").textContent = err.message;
+  }
+}
+
 async function refresh() {
   if (!token()) return;
   const state = await request("/api/admin/state");
@@ -89,6 +103,9 @@ async function refresh() {
 
 document.querySelectorAll("[data-fan]").forEach((button) => {
   button.addEventListener("click", () => sendFan(Number(button.dataset.fan)));
+});
+document.querySelectorAll("[data-mode]").forEach((button) => {
+  button.addEventListener("click", () => sendMode(button.dataset.mode));
 });
 document.getElementById("token").addEventListener("change", refresh);
 setInterval(() => refresh().catch(() => {}), 5000);
@@ -131,13 +148,25 @@ export function createRoutes({ store, nodeId, adminToken, deviceToken }) {
       return res.status(400).json({ error: result.error });
     }
 
+    const currentState = await store.readState();
+    const now = new Date().toISOString();
     const state = {
+      ...currentState,
       nodeId,
       mode: result.value.mode,
-      fans: result.value.fans,
-      updatedAt: new Date().toISOString(),
+      source: "admin",
+      fans: result.value.fans || currentState.fans,
+      updatedAt: now,
       updatedBy: "admin"
     };
+
+    if (result.value.mode === "idle") {
+      state.source = "admin";
+      state.fans = result.value.fans;
+      state.pattern = "idle";
+      state.intensity = 0;
+      state.expiresAt = null;
+    }
 
     await store.writeState(state);
     await store.appendLog({

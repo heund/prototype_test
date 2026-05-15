@@ -3,7 +3,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = path.resolve(__dirname, "../data");
+const dataDir = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : path.resolve(__dirname, "../data");
 const statePath = path.join(dataDir, "state.json");
 const logsPath = path.join(dataDir, "logs.jsonl");
 const heartbeatPath = path.join(dataDir, "heartbeat.json");
@@ -11,13 +13,39 @@ const heartbeatPath = path.join(dataDir, "heartbeat.json");
 function defaultState(nodeId) {
   return {
     nodeId,
-    mode: "manual",
+    mode: "central",
+    source: "system",
     fans: {
       fan1: 0
     },
+    centralOutput: null,
+    centralStatus: "not_configured",
+    pattern: "idle",
+    intensity: 0,
+    expiresAt: null,
     updatedAt: new Date().toISOString(),
     updatedBy: "system"
   };
+}
+
+function normalizeState(state, nodeId) {
+  const fallback = defaultState(nodeId);
+  const normalized = {
+    ...fallback,
+    ...state,
+    nodeId,
+    fans: {
+      ...fallback.fans,
+      ...(state && state.fans ? state.fans : {})
+    }
+  };
+
+  if (normalized.mode === "manual" && normalized.updatedBy === "system") {
+    normalized.mode = "central";
+    normalized.source = "system";
+  }
+
+  return normalized;
 }
 
 async function writeJsonAtomic(filePath, value) {
@@ -46,7 +74,7 @@ export function createStore({ nodeId }) {
 
     async readState() {
       const content = await fs.readFile(statePath, "utf8");
-      return JSON.parse(content);
+      return normalizeState(JSON.parse(content), nodeId);
     },
 
     async writeState(state) {

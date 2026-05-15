@@ -32,8 +32,18 @@ export function validateCommandPayload(body) {
     return { ok: false, error: "request body must be an object" };
   }
 
-  if (body.mode !== "manual") {
-    return { ok: false, error: "mode must be manual" };
+  if (!["manual", "central", "idle"].includes(body.mode)) {
+    return { ok: false, error: "mode must be manual, central, or idle" };
+  }
+
+  if (body.mode === "central" || body.mode === "idle") {
+    return {
+      ok: true,
+      value: {
+        mode: body.mode,
+        fans: body.mode === "idle" ? FAN_KEYS.reduce((acc, key) => ({ ...acc, [key]: 0 }), {}) : null
+      }
+    };
   }
 
   const fans = validateFans(body.fans);

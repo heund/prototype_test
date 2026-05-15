@@ -1,5 +1,7 @@
 README.md
 esp32/
+security/
+.cache/
 
 .env
 .env.*

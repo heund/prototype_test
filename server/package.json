@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "check": "node --check src/index.js && node --check src/auth.js && node --check src/store.js && node --check src/routes.js && node --check src/validators.js"
+    "check": "node --check src/index.js && node --check src/auth.js && node --check src/store.js && node --check src/routes.js && node --check src/validators.js && node --check src/central-output-poller.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -19,4 +19,3 @@
     "node": ">=20"
   }
 }
-
